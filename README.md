@@ -1,4 +1,4 @@
-# WPC Map Clone
+# Workplacement Map
 
 Internal Django application for placement facility discovery and management.
 
