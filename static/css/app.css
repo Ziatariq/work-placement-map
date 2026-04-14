@@ -894,30 +894,6 @@ body {
     background: #dbeafe;
 }
 
-.facility-map .leaflet-control-container,
-.facility-map .leaflet-top,
-.facility-map .leaflet-bottom,
-.facility-map .leaflet-left,
-.facility-map .leaflet-right {
-    position: absolute;
-}
-
-.facility-map .leaflet-top {
-    top: 0;
-}
-
-.facility-map .leaflet-left {
-    left: 0;
-}
-
-.facility-map .leaflet-right {
-    right: 0;
-}
-
-.facility-map .leaflet-bottom {
-    bottom: 0;
-}
-
 .map-detail-panel {
     position: absolute;
     top: 88px;
@@ -2947,5 +2923,24 @@ input.form-input {
     .topbar-menu {
         align-self: flex-end;
     }
+}
+
+
+/* Leaflet zoom controls anchoring */
+#facility-map.leaflet-container {
+    position: relative;
+    isolation: isolate;
+}
+
+#facility-map.leaflet-container .leaflet-top,
+#facility-map.leaflet-container .leaflet-bottom {
+    z-index: 400;
+}
+
+
+
+
+.suburb-suggestions[hidden] {
+    display: none !important;
 }
 
