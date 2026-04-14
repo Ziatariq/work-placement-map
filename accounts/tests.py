@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import User
@@ -18,6 +18,23 @@ class AuthFlowTests(TestCase):
         self.assertRedirects(response, reverse("core:home"))
         user = User.objects.get(email="approved@insight.edu.au")
         self.assertEqual(user.role, User.Roles.VIEWER)
+        self.assertFalse(user.is_staff)
+
+    @override_settings(ADMIN_SIGNUP_EMAILS={"admin@insight.edu.au"})
+    def test_signup_assigns_admin_role_for_approved_admin_email(self):
+        response = self.client.post(
+            reverse("accounts:sign_up"),
+            {
+                "email": "admin@insight.edu.au",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("core:home"))
+        user = User.objects.get(email="admin@insight.edu.au")
+        self.assertEqual(user.role, User.Roles.ADMIN)
+        self.assertTrue(user.is_staff)
 
     def test_signup_rejects_non_org_email(self):
         response = self.client.post(

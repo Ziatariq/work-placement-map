@@ -97,3 +97,9 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com")
+
+ADMIN_SIGNUP_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("ADMIN_SIGNUP_EMAILS", "").split(",")
+    if email.strip()
+}
