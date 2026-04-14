@@ -2,10 +2,6 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
-from django.db import transaction
-
-from .models import AllowedSignupEmail
-
 User = get_user_model()
 
 
@@ -47,6 +43,8 @@ class LoginForm(StyledFormMixin, forms.Form):
 
 
 class SignUpForm(StyledFormMixin, forms.Form):
+    allowed_domain = "@insight.edu.au"
+
     email = forms.EmailField(label="Email")
     password1 = forms.CharField(label="Password", strip=False, widget=forms.PasswordInput)
     password2 = forms.CharField(label="Repeat Password", strip=False, widget=forms.PasswordInput)
@@ -59,15 +57,11 @@ class SignUpForm(StyledFormMixin, forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()
-        try:
-            allowed_email = AllowedSignupEmail.objects.get(email__iexact=email)
-        except AllowedSignupEmail.DoesNotExist as exc:
-            raise forms.ValidationError("This email is not allowed to sign up") from exc
+        if not email.endswith(self.allowed_domain):
+            raise forms.ValidationError("Please use your @insight.edu.au email address to sign up")
 
-        if allowed_email.is_registered or User.objects.filter(email__iexact=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("An account with this email already exists")
-
-        self.allowed_email = allowed_email
         return email
 
     def clean(self):
@@ -86,17 +80,12 @@ class SignUpForm(StyledFormMixin, forms.Form):
 
         return cleaned_data
 
-    @transaction.atomic
     def save(self):
-        allowed_email = self.allowed_email
-        user = User.objects.create_user(
+        return User.objects.create_user(
             email=self.cleaned_data["email"],
             password=self.cleaned_data["password1"],
-            role=allowed_email.role,
+            role=User.Roles.VIEWER,
         )
-        allowed_email.is_registered = True
-        allowed_email.save(update_fields=["is_registered"])
-        return user
 
 
 class ForgotPasswordForm(StyledFormMixin, PasswordResetForm):
