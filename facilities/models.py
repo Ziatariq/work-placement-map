@@ -81,8 +81,8 @@ class Facility(models.Model):
     spots = models.PositiveIntegerField(default=0)
     next_start = models.DateField(blank=True, null=True)
     geo_raw = models.TextField(blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
     geo_accuracy = models.CharField(
         max_length=20,
         choices=GeoAccuracy.choices,
