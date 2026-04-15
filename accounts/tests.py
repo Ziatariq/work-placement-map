@@ -1,11 +1,11 @@
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
 
 
 class AuthFlowTests(TestCase):
-    def test_org_signup_creates_viewer_user(self):
+    def test_insight_signup_creates_admin_user(self):
         response = self.client.post(
             reverse("accounts:sign_up"),
             {
@@ -17,37 +17,25 @@ class AuthFlowTests(TestCase):
 
         self.assertRedirects(response, reverse("core:home"))
         user = User.objects.get(email="approved@insight.edu.au")
-        self.assertEqual(user.role, User.Roles.VIEWER)
-        self.assertFalse(user.is_staff)
+        self.assertEqual(user.role, User.Roles.ADMIN)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
 
-    @override_settings(ADMIN_SIGNUP_EMAILS={"admin@insight.edu.au"})
-    def test_signup_assigns_admin_role_for_approved_admin_email(self):
+    def test_non_insight_signup_creates_viewer_user(self):
         response = self.client.post(
             reverse("accounts:sign_up"),
             {
-                "email": "admin@insight.edu.au",
+                "email": "viewer@example.com",
                 "password1": "StrongPass123!",
                 "password2": "StrongPass123!",
             },
         )
 
         self.assertRedirects(response, reverse("core:home"))
-        user = User.objects.get(email="admin@insight.edu.au")
-        self.assertEqual(user.role, User.Roles.ADMIN)
-        self.assertTrue(user.is_staff)
-
-    def test_signup_rejects_non_org_email(self):
-        response = self.client.post(
-            reverse("accounts:sign_up"),
-            {
-                "email": "blocked@example.com",
-                "password1": "StrongPass123!",
-                "password2": "StrongPass123!",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please use your @insight.edu.au email address to sign up")
+        user = User.objects.get(email="viewer@example.com")
+        self.assertEqual(user.role, User.Roles.VIEWER)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
 
     def test_login_invalid_shows_expected_message(self):
         User.objects.create_user(email="viewer@example.com", password="CorrectPass123!", role=User.Roles.VIEWER)

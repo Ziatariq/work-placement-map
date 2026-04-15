@@ -1,5 +1,4 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
@@ -44,7 +43,7 @@ class LoginForm(StyledFormMixin, forms.Form):
 
 
 class SignUpForm(StyledFormMixin, forms.Form):
-    allowed_domain = "@insight.edu.au"
+    admin_domain = "@insight.edu.au"
 
     email = forms.EmailField(label="Email")
     password1 = forms.CharField(label="Password", strip=False, widget=forms.PasswordInput)
@@ -58,9 +57,6 @@ class SignUpForm(StyledFormMixin, forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()
-        if not email.endswith(self.allowed_domain):
-            raise forms.ValidationError("Please use your @insight.edu.au email address to sign up")
-
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("An account with this email already exists")
         return email
@@ -83,16 +79,16 @@ class SignUpForm(StyledFormMixin, forms.Form):
 
     def save(self):
         email = self.cleaned_data["email"]
-        is_admin_signup = email.lower() in getattr(settings, "ADMIN_SIGNUP_EMAILS", set())
+        is_admin_signup = email.lower().endswith(self.admin_domain)
 
         user = User.objects.create_user(
             email=self.cleaned_data["email"],
             password=self.cleaned_data["password1"],
             role=User.Roles.ADMIN if is_admin_signup else User.Roles.VIEWER,
         )
-        if is_admin_signup and not user.is_staff:
-            user.is_staff = True
-            user.save(update_fields=["is_staff"])
+        user.is_staff = is_admin_signup
+        user.is_superuser = is_admin_signup
+        user.save(update_fields=["is_staff", "is_superuser"])
         return user
 
 
