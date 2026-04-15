@@ -207,8 +207,40 @@ class AdminDashboardView(AdminRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        access_records = list(AllowedSignupEmail.objects.order_by("-created_at", "email"))
-        users_by_email = {user.email.lower(): user for user in User.objects.all()}
+        users = list(User.objects.all().order_by("email"))
+        users_by_email = {user.email.lower(): user for user in users}
+        access_records_by_email = {
+            record.email.lower(): record
+            for record in AllowedSignupEmail.objects.order_by("-created_at", "email")
+        }
+
+        for user in users:
+            user_email = user.email.lower()
+            access_record = access_records_by_email.get(user_email)
+            if access_record is None:
+                access_record = AllowedSignupEmail.objects.create(
+                    email=user.email,
+                    role=user.role,
+                    is_registered=True,
+                )
+                access_records_by_email[user_email] = access_record
+                continue
+
+            update_fields = []
+            if access_record.role != user.role:
+                access_record.role = user.role
+                update_fields.append("role")
+            if not access_record.is_registered:
+                access_record.is_registered = True
+                update_fields.append("is_registered")
+            if update_fields:
+                access_record.save(update_fields=update_fields)
+
+        access_records = sorted(
+            access_records_by_email.values(),
+            key=lambda record: (record.created_at, record.email.lower()),
+            reverse=True,
+        )
         entries = []
         for record in access_records:
             user = users_by_email.get(record.email.lower())
@@ -222,7 +254,7 @@ class AdminDashboardView(AdminRequiredMixin, FormView):
         context.update(
             {
                 "subtitle": "Manage users and system access permissions",
-                "total_user_count": User.objects.count(),
+                "total_user_count": len(entries),
                 "access_entries": entries,
             }
         )

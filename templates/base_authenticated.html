@@ -28,7 +28,7 @@
                     <nav class="nav">
                         <a href="{% url 'facilities:list' %}"{% if request.path|slice:":12" == '/facilities/' %} class="is-active"{% endif %}>Facilities</a>
                         {% if app_perms.can_manage_user_access %}
-                            <a href="/admin/"{% if request.path|slice:":7" == '/admin/' %} class="is-active"{% endif %}>Admin</a>
+                            <a href="{% url 'core_admin:dashboard' %}"{% if request.path|slice:":13" == '/panel/admin/' %} class="is-active"{% endif %}>Admin</a>
                         {% endif %}
                     </nav>
                     {% if request.user.is_authenticated %}
